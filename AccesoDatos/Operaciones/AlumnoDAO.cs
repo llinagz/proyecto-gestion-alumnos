@@ -19,6 +19,12 @@ namespace AccesoDatos.Operaciones
             return alumno;
         }
 
+        public Alumno SeleccionarPorDni(string dni)
+        {
+            var alumno = _context.Alumnos.Where(a => a.Dni == dni).FirstOrDefault();
+            return alumno;
+        }
+
         public bool Insertar(string dni, string nombre, string direccion, int edad, string email)
         {
             try
@@ -106,6 +112,67 @@ namespace AccesoDatos.Operaciones
                         };
 
             return query.ToList();
+        }
+
+        public List<AlumnoProfesor> SeleccionarAlumnosProfesor(string usuarioProfesor)
+        {
+            var query = from a in _context.Alumnos
+                        join m in _context.Matriculas on a.Id equals m.AlumnoId
+                        join asig in _context.Asignaturas on m.AsignaturaId equals asig.Id
+                        where asig.Profesor == usuarioProfesor
+                        select new AlumnoProfesor
+                        {
+                            Id = a.Id,
+                            Dni = a.Dni,
+                            Nombre = a.Nombre,
+                            Direccion = a.Direccion,
+                            Edad = a.Edad,
+                            Email = a.Email,
+                            Asignatura = asig.Nombre
+                        };
+
+            return query.ToList();
+        }
+
+        public bool InsertarYMatricular(string dni, string nombre, string direccion, int edad, string email, int idAsignatura)
+        {
+            try
+            {
+                //Comprobar si existe o no al alumno
+                var existe = SeleccionarPorDni(dni);
+
+                if(existe == null)
+                {
+                    //Si no existe, lo insertamos en la tabla Alumno
+                    Insertar(dni, nombre, direccion, edad, email);
+                    //Lo matriculamos
+                    var insertado = SeleccionarPorDni(dni);
+
+                    Matricula matricula = new Matricula();
+                    matricula.AlumnoId = insertado.Id;
+                    matricula.AsignaturaId = idAsignatura;
+
+                    _context.Matriculas.Add(matricula);
+                    _context.SaveChanges();
+                }
+                //Si existe
+                else
+                {
+                    Matricula matricula = new Matricula();
+                    matricula.AlumnoId = existe.Id;
+                    matricula.AsignaturaId = idAsignatura;
+
+                    _context.Matriculas.Add(matricula);
+                    _context.SaveChanges();
+
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
