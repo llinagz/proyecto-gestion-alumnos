@@ -174,5 +174,34 @@ namespace AccesoDatos.Operaciones
                 return false;
             }
         }
+
+        public bool EliminarAlumno(int id)
+        {
+            try
+            {
+                var alumno = _context.Alumnos.Where(a => a.Id == id).FirstOrDefault();
+                if (alumno != null)
+                {
+                    var matriculas = _context.Matriculas.Where(m => m.AlumnoId == id).ToList();
+                    foreach(Matricula matricula in matriculas)
+                    {
+                        var calificaciones = _context.Calificacions.Where(c => c.MatriculaId == matricula.Id);
+                        _context.Calificacions.RemoveRange(calificaciones);
+                    }
+                    _context.Matriculas.RemoveRange(matriculas);
+                    _context.Alumnos.Remove(alumno);
+                    _context.SaveChanges();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
